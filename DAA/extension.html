@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Knapsack Game - Pastel Edition</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #fdf6f0;
+            color: #444;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #a06cd5;
+            margin: 20px 0 10px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .input-area,
+        .knapsack {
+            background-color: #fffaf4;
+            border: 2px solid #e3d5ca;
+            border-radius: 15px;
+            padding: 25px;
+            width: 320px;
+            box-shadow: 0 5px 15px rgba(160, 108, 213, 0.1);
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            width: 80px;
+            margin: 5px;
+            border-radius: 10px;
+            border: 2px solid #d3c0cd;
+            font-size: 1rem;
+            background-color: #fcefee;
+            color: #333;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            background: #f6c1c7;
+            color: #333;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #eebbc3;
+            transform: scale(1.05);
+        }
+
+        .item {
+            background-color: #a0d8ef;
+            color: #333;
+            padding: 10px;
+            margin: 10px auto;
+            border-radius: 12px;
+            cursor: grab;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(160, 216, 239, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .item:hover {
+            transform: scale(1.05);
+        }
+
+        .knapsack {
+            background-color: #fef6e4;
+            border: 2px dashed #f4a261;
+            min-height: 300px;
+        }
+
+        #knapsackTitle {
+            font-size: 1.3rem;
+            color: #e07a5f;
+        }
+
+        #capacity,
+        #value {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #555;
+        }
+
+        .item-list {
+            margin-top: 20px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 25px 35px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content h2 {
+            color: #d9534f;
+        }
+
+        .modal-content button {
+            background-color: #f6c1c7;
+            margin-top: 15px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎒 Knapsack Game</h1>
+    <p>Set capacity, add items with weight and value, then drag them in!</p>
+
+    <div class="container">
+        <div class="input-area">
+            <label><strong>Knapsack Capacity:</strong></label><br />
+            <input type="number" id="capacityInput" value="10" min="1" />
+            <button onclick="setCapacity()">Set Capacity</button>
+
+            <hr style="margin: 15px 0;">
+
+            <h3>Add New Item</h3>
+            <input type="number" id="itemWeight" placeholder="Weight" min="1">
+            <input type="number" id="itemValue" placeholder="Value" min="1">
+            <button onclick="addItem()">Add Item</button>
+
+            <div id="itemsList" class="item-list">
+                <!-- Dynamic Items Here -->
+            </div>
+        </div>
+
+        <div class="knapsack" id="knapsack" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3 id="knapsackTitle">Knapsack (Capacity: 10)</h3>
+            <p id="capacity">Current Weight: 0</p>
+            <p id="value">Total Value: 0</p>
+        </div>
+    </div>
+
+    <button onclick="resetGame()">Reset Game</button>
+
+    <!-- Modal -->
+    <div id="popupModal" class="modal">
+        <div class="modal-content">
+            <h2>🚫 Cannot Add Item!</h2>
+            <p>This item exceeds the knapsack capacity.</p>
+            <button onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        let currentWeight = 0;
+        let totalValue = 0;
+        let maxCapacity = 10;
+        let itemId = 1;
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            const itemId = event.dataTransfer.getData("id");
+            const item = document.getElementById(itemId);
+            const weight = parseInt(item.getAttribute("data-weight"));
+            const value = parseInt(item.getAttribute("data-value"));
+
+            if (item.parentNode.id !== "knapsack") {
+                if (currentWeight + weight <= maxCapacity) {
+                    document.getElementById("knapsack").appendChild(item);
+                    currentWeight += weight;
+                    totalValue += value;
+                    updateStats();
+                } else {
+                    showModal();
+                }
+            }
+        }
+
+        function showModal() {
+            document.getElementById("popupModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("popupModal").style.display = "none";
+        }
+
+        function setCapacity() {
+            const input = document.getElementById("capacityInput").value;
+            maxCapacity = parseInt(input);
+            currentWeight = 0;
+            totalValue = 0;
+            document.getElementById("knapsackTitle").innerText = `Knapsack (Capacity: ${maxCapacity})`;
+            resetGame(false);
+            updateStats();
+        }
+
+        function addItem() {
+            const weight = parseInt(document.getElementById("itemWeight").value);
+            const value = parseInt(document.getElementById("itemValue").value);
+
+            if (isNaN(weight) || isNaN(value) || weight <= 0 || value <= 0) {
+                showModal();
+                return;
+            }
+
+            const item = document.createElement("div");
+            item.className = "item";
+            item.setAttribute("draggable", true);
+            item.setAttribute("data-weight", weight);
+            item.setAttribute("data-value", value);
+            item.setAttribute("id", `item-${itemId}`);
+            item.textContent = `Item ${itemId} (W:${weight}, V:${value})`;
+            item.addEventListener("dragstart", e => {
+                e.dataTransfer.setData("id", item.id);
+            });
+
+            document.getElementById("itemsList").appendChild(item);
+            itemId++;
+            document.getElementById("itemWeight").value = "";
+            document.getElementById("itemValue").value = "";
+        }
+
+        function updateStats() {
+            document.getElementById("capacity").innerText = `Current Weight: ${currentWeight}`;
+            document.getElementById("value").innerText = `Total Value: ${totalValue}`;
+        }
+
+        function resetGame(resetItems = true) {
+            currentWeight = 0;
+            totalValue = 0;
+            updateStats();
+            document.getElementById("knapsack").innerHTML = `
+        <h3 id="knapsackTitle">Knapsack (Capacity: ${maxCapacity})</h3>
+        <p id="capacity">Current Weight: 0</p>
+        <p id="value">Total Value: 0</p>
+      `;
+            if (resetItems) {
+                document.getElementById("itemsList").innerHTML = "";
+                itemId = 1;
+            }
+        }
+    </script>
+</body>
+
+</html>

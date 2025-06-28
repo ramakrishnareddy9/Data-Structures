@@ -1,0 +1,20 @@
+Procedure SolveCrossword(board, words):
+    slots ← FindSlots(board)
+    if Solve(0, board, words, slots) then
+        Print(board)
+    else
+        Print("No solution found")
+
+Procedure Solve(slotIndex, board, words, slots):
+    if slotIndex == length(slots) then
+        return True
+    currentSlot ← slots[slotIndex]
+    for each word in words such that length(word) == currentSlot.length do:
+        if canPlace(board, currentSlot, word) then:
+            changedCells ← placeWord(board, currentSlot, word)
+            remove word from words
+            if Solve(slotIndex + 1, board, words, slots) then
+                return True
+            unPlaceWord(board, currentSlot, changedCells)
+            add word back to words
+    return False

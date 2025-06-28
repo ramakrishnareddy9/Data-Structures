@@ -1,0 +1,23 @@
+function solve_puzzle(puzzle):
+    visited = empty set
+    return backtrack(puzzle, visited, depth=0, depth_limit)
+
+function backtrack(puzzle, visited, depth, depth_limit):
+    if puzzle is goal_state:
+        return True
+
+    if depth > depth_limit:
+        return False
+
+    mark current puzzle as visited
+
+    (x, y) = position of empty tile (0)
+
+    for each direction in [up, down, left, right]:
+        if move in that direction is valid:
+            new_puzzle = puzzle after moving tile
+            if new_puzzle not in visited:
+                if backtrack(new_puzzle, visited, depth + 1, depth_limit):
+                    return True
+
+    return False
